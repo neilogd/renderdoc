@@ -4791,7 +4791,21 @@ void D3D11DebugManager::RenderMesh(uint32_t eventID, const vector<MeshFormat> &s
   Matrix4f camMat = cfg.cam ? ((Camera *)cfg.cam)->GetMatrix() : Matrix4f::Identity();
   Matrix4f guessProjInv;
 
-  vertexData.ModelViewProj = projMat.Mul(camMat);
+  Matrix4f coordinateSystemTransform = Matrix4f::Identity();
+  if(cfg.coordinateSystem == CoordinateSystem::Z_up)
+  {
+    coordinateSystemTransform[5] = 0;
+    coordinateSystemTransform[6] = 1.f;
+    coordinateSystemTransform[9] = 1.f;
+    coordinateSystemTransform[10] = 0.f;
+  }
+  else if(cfg.coordinateSystem == CoordinateSystem::Z_out)
+  {
+    coordinateSystemTransform[10] = -1.f;
+  }
+
+  vertexData.ModelViewProj = projMat.Mul(camMat).Mul(coordinateSystemTransform);
+
   vertexData.SpriteSize = Vec2f();
 
   DebugPixelCBufferData pixelData;
@@ -5060,7 +5074,8 @@ void D3D11DebugManager::RenderMesh(uint32_t eventID, const vector<MeshFormat> &s
 
   // set up state for drawing helpers
   {
-    vertexData.ModelViewProj = projMat.Mul(camMat);
+    vertexData.ModelViewProj = projMat.Mul(camMat).Mul(coordinateSystemTransform);
+
     FillCBuffer(m_DebugRender.GenericVSCBuffer, &vertexData, sizeof(DebugVertexCBuffer));
 
     m_pImmediateContext->RSSetState(m_SolidHelpersRS);
@@ -5147,7 +5162,9 @@ void D3D11DebugManager::RenderMesh(uint32_t eventID, const vector<MeshFormat> &s
       if(cfg.position.unproject)
         vertexData.ModelViewProj = projMat.Mul(camMat.Mul(guessProjInv));
       else
-        vertexData.ModelViewProj = projMat.Mul(camMat);
+      {
+        vertexData.ModelViewProj = projMat.Mul(camMat).Mul(coordinateSystemTransform);
+      }
 
       m_pImmediateContext->IASetInputLayout(m_DebugRender.GenericLayout);
 
@@ -5271,7 +5288,8 @@ void D3D11DebugManager::RenderMesh(uint32_t eventID, const vector<MeshFormat> &s
     D3D11_MAPPED_SUBRESOURCE mapped;
 
     vertexData.SpriteSize = Vec2f();
-    vertexData.ModelViewProj = projMat.Mul(camMat);
+    vertexData.ModelViewProj = projMat.Mul(camMat).Mul(coordinateSystemTransform);
+
     FillCBuffer(m_DebugRender.GenericVSCBuffer, &vertexData, sizeof(DebugVertexCBuffer));
 
     HRESULT hr =

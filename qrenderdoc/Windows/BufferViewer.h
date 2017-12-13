@@ -101,6 +101,7 @@ private slots:
   void on_resourceDetails_clicked();
   void on_highlightVerts_toggled(bool checked);
   void on_wireframeRender_toggled(bool checked);
+  void on_coordinateSystem_currentIndexChanged(int index);
   void on_solidShading_currentIndexChanged(int index);
   void on_drawRange_currentIndexChanged(int index);
   void on_controlType_currentIndexChanged(int index);

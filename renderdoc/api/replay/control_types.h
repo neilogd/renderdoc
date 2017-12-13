@@ -148,6 +148,10 @@ struct MeshDisplay
   DOCUMENT("``True`` if the wireframe of the mesh should be rendered as well as solid shading.");
   bool wireframeDraw;
 
+  DOCUMENT(
+      "The :class:`coordinate system <CoordinateSystem>` to use when rendering the current mesh.");
+  CoordinateSystem coordinateSystem;
+
   static const uint32_t NoHighlight = ~0U;
 };
 
