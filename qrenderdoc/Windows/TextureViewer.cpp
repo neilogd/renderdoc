@@ -635,7 +635,9 @@ TextureViewer::TextureViewer(ICaptureContext &ctx, QWidget *parent)
                          tr("Viewport/Scissor Region"), tr("NaN/INF/-ve Display"),
                          tr("Histogram Clipping"), tr("Clear Before Pass"), tr("Clear Before Draw"),
                          tr("Quad Overdraw (Pass)"), tr("Quad Overdraw (Draw)"),
-                         tr("Triangle Size (Pass)"), tr("Triangle Size (Draw)")});
+                         tr("Triangle Size (Pass)"), tr("Triangle Size (Draw)"),
+                         tr("VS Complexity (Pass)"), tr("VS Complexity (Draw)"),
+                         tr("PS Complexity (Pass)"), tr("PS Complexity (Draw)")});
 
   ui->textureListFilter->addItems({QString(), tr("Textures"), tr("Render Targets")});
 
@@ -2863,7 +2865,11 @@ void TextureViewer::on_overlay_currentIndexChanged(int index)
     ANALYTICS_OVERLAY(QuadOverdrawDraw);
     ANALYTICS_OVERLAY(TriangleSizePass);
     ANALYTICS_OVERLAY(TriangleSizeDraw);
-    default: break;
+    ANALYTICS_OVERLAY(VSComplexityPass);
+    ANALYTICS_OVERLAY(VSComplexityDraw);
+    ANALYTICS_OVERLAY(PSComplexityPass);
+    ANALYTICS_OVERLAY(PSComplexityDraw);
+  default: break;
   }
 
 #undef ANALYTICS_OVERLAY

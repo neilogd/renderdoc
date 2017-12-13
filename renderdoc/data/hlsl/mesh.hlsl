@@ -113,6 +113,21 @@ float4 RENDERDOC_TriangleSizePS(triSizeV2F IN) : SV_Target0
 	return overdrawRampColours[bucket];
 }
 
+cbuffer shaderComplexityCBuf : register(b1)
+{
+	const float4 shaderComplexity;
+};
+
+float4 RENDERDOC_ShaderComplexityPS(wireframeV2F IN) : SV_Target0
+{
+	float sc = max(shaderComplexity.x, 0.0f);
+	float bucket = 20.0f * (1.0 - exp(-(sc / shaderComplexity.y)));
+	int bucket0 = 2 + int(floor(bucket));
+	int bucket1 = 2 + int(ceil(bucket));
+
+	return lerp(overdrawRampColours[bucket0], overdrawRampColours[bucket1], frac(bucket));
+}
+
 [maxvertexcount(3)]
 void RENDERDOC_MeshGS(triangle wireframeV2F input[3], inout TriangleStream<wireframeV2F> TriStream)
 {

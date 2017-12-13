@@ -213,7 +213,11 @@ struct Analytics
       bool QuadOverdrawDraw = false;
       bool TriangleSizePass = false;
       bool TriangleSizeDraw = false;
-    } TextureDebugOverlays;
+      bool VSComplexityPass = false;
+      bool VSComplexityDraw = false;      
+	  bool PSComplexityPass = false;
+      bool PSComplexityDraw = false;
+	} TextureDebugOverlays;
 
     struct
     {
