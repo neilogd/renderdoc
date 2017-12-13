@@ -1838,6 +1838,8 @@ void D3D11Replay::SetProxyBufferData(ResourceId bufid, byte *data, size_t dataSi
 
 ID3DDevice *GetD3D11DeviceIfAlloc(IUnknown *dev);
 
+extern "C" HRESULT RENDERDOC_CreateWrappedDXGIFactory1(REFIID riid, void **ppFactory);
+
 extern "C" HRESULT RENDERDOC_CreateWrappedD3D11DeviceAndSwapChain(
     __in_opt IDXGIAdapter *, D3D_DRIVER_TYPE, HMODULE, UINT,
     __in_ecount_opt(FeatureLevels) CONST D3D_FEATURE_LEVEL *, UINT FeatureLevels, UINT,
@@ -1955,6 +1957,37 @@ ReplayStatus D3D11_CreateReplayDevice(RDCFile *rdc, IReplayDriver **driver)
 
   D3D_FEATURE_LEVEL maxFeatureLevel = D3D_FEATURE_LEVEL_9_1;
 
+  // Enumerate DXGI devices.
+  std::vector<DXGI_ADAPTER_DESC> adapterDescs;
+  IDXGIFactory* dxgiFactory = nullptr;
+
+  hr = RENDERDOC_CreateWrappedDXGIFactory1(IID_IDXGIFactory, (void**)&dxgiFactory);
+  if(SUCCEEDED(hr))
+  {
+    DWORD adapterIdx = 0;
+    IDXGIAdapter* adapter = nullptr;
+    while(SUCCEEDED(dxgiFactory->EnumAdapters(adapterIdx++, &adapter)))
+    {
+      DXGI_ADAPTER_DESC desc;
+      adapter->GetDesc(&desc);
+
+      hr = RENDERDOC_CreateWrappedD3D11DeviceAndSwapChain(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL,
+                                                          0, D3D11_SDK_VERSION, NULL, NULL, NULL,
+                                                          &maxFeatureLevel, NULL);
+
+      if(SUCCEEDED(hr) && maxFeatureLevel >= D3D_FEATURE_LEVEL_11_0)
+      {
+        adapterDescs.push_back(desc);
+        SAFE_RELEASE(adapter);
+      }
+      else
+      {
+        SAFE_RELEASE(adapter);
+      }
+    }
+  }
+  SAFE_RELEASE(dxgiFactory);
+  
   // check for feature level 11 support - passing NULL feature level array implicitly checks for
   // 11_0 before others
   hr = RENDERDOC_CreateWrappedD3D11DeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, NULL,
