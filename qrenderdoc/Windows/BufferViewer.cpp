@@ -114,6 +114,7 @@ protected:
   int move(Direction dir) { return m_CurrentMove[(int)dir]; }
   float currentSpeed() { return m_CurrentSpeed * SpeedMultiplier; }
   QPoint dragStartPos() { return m_DragStartPos; }
+
 private:
   float m_CurrentSpeed = 1.0f;
   int m_CurrentMove[(int)Direction::Num] = {0, 0, 0};
@@ -1001,6 +1002,7 @@ BufferViewer::BufferViewer(ICaptureContext &ctx, bool meshview, QWidget *parent)
   memset(&m_Config, 0, sizeof(m_Config));
   m_Config.type = MeshDataStage::VSIn;
   m_Config.wireframeDraw = true;
+  m_Config.coordinateSystem = CoordinateSystem::Y_up;
 
   ui->outputTabs->setCurrentIndex(0);
   m_CurStage = MeshDataStage::VSIn;
@@ -1081,6 +1083,10 @@ BufferViewer::BufferViewer(ICaptureContext &ctx, bool meshview, QWidget *parent)
   ui->solidShading->addItems({tr("None"), tr("Solid Colour"), tr("Flat Shaded"), tr("Secondary")});
   ui->solidShading->adjustSize();
   ui->solidShading->setCurrentIndex(0);
+
+  ui->coordinateSystem->addItems({tr("Y up"), tr("Z up"), tr("Z out")});
+  ui->coordinateSystem->adjustSize();
+  ui->coordinateSystem->setCurrentIndex(0);
 
   ui->matrixType->addItems({tr("Perspective"), tr("Orthographic")});
 
@@ -3338,6 +3344,13 @@ void BufferViewer::on_highlightVerts_toggled(bool checked)
 void BufferViewer::on_wireframeRender_toggled(bool checked)
 {
   m_Config.wireframeDraw = checked;
+
+  INVOKE_MEMFN(RT_UpdateAndDisplay);
+}
+
+void BufferViewer::on_coordinateSystem_currentIndexChanged(int index)
+{
+  m_Config.coordinateSystem = (CoordinateSystem)index;
 
   INVOKE_MEMFN(RT_UpdateAndDisplay);
 }

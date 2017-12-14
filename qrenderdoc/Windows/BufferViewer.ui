@@ -319,7 +319,10 @@
              </property>
             </widget>
            </item>
-           <item>
+            <item>
+              <widget class="QComboBox" name="coordinateSystem"/>
+            </item>
+            <item>
             <widget class="QToolButton" name="highlightVerts">
              <property name="enabled">
               <bool>true</bool>

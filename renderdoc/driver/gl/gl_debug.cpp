@@ -4777,7 +4777,20 @@ void GLReplay::RenderMesh(uint32_t eventID, const vector<MeshFormat> &secondaryD
 
   Matrix4f camMat = cfg.cam ? ((Camera *)cfg.cam)->GetMatrix() : Matrix4f::Identity();
 
-  Matrix4f ModelViewProj = projMat.Mul(camMat);
+  Matrix4f coordinateSystemTransform = Matrix4f::Identity();
+  if(cfg.coordinateSystem == CoordinateSystem::Z_up)
+  {
+    coordinateSystemTransform[5] = 0;
+    coordinateSystemTransform[6] = 1.f;
+    coordinateSystemTransform[9] = 1.f;
+    coordinateSystemTransform[10] = 0.f;
+  }
+  else if(cfg.coordinateSystem == CoordinateSystem::Z_out)
+  {
+    coordinateSystemTransform[10] = -1.f;
+  }
+
+  Matrix4f ModelViewProj = projMat.Mul(camMat).Mul(coordinateSystemTransform);
   Matrix4f guessProjInv;
 
   gl.glBindVertexArray(DebugData.meshVAO);
@@ -5228,7 +5241,7 @@ void GLReplay::RenderMesh(uint32_t eventID, const vector<MeshFormat> &secondaryD
       if(cfg.position.unproject)
         ModelViewProj = projMat.Mul(camMat.Mul(guessProjInv));
       else
-        ModelViewProj = projMat.Mul(camMat);
+        ModelViewProj = projMat.Mul(camMat).Mul(coordinateSystemTransform);
 
       uboParams.homogenousInput = cfg.position.unproject;
 

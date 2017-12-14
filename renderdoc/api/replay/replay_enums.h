@@ -2053,6 +2053,31 @@ enum class SolidShade : uint32_t
 
 DECLARE_REFLECTION_ENUM(SolidShade);
 
+DOCUMENT(R"(The coordinate system to use when rendering a mesh.
+
+.. data:: Y_up
+
+  Y axis pointing up and Z axis pointing into the screen.
+
+.. data:: Z_up
+
+  Z axis pointing up and Y axis pointing into the screen.
+
+.. data:: Z_out
+
+  Y axis pointing up and Z axis pointing out of the screen.
+
+)");
+enum class CoordinateSystem : uint32_t
+{
+  Y_up = 0,
+  Z_up,
+  Z_out,
+  Count,
+};
+
+DECLARE_REFLECTION_ENUM(CoordinateSystem);
+
 DOCUMENT(R"(The fill mode for polygons.
 
 .. data:: Solid
