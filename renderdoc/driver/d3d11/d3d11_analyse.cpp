@@ -4371,6 +4371,118 @@ ResourceId D3D11DebugManager::RenderOverlay(ResourceId texid, CompType typeHint,
         m_WrappedDevice->ReplayLog(0, eventID, eReplay_WithoutDraw);
     }
   }
+  else if(overlay == DebugOverlay::ShaderComplexityDraw || overlay == DebugOverlay::ShaderComplexityPass)
+  {
+    SCOPED_TIMER("Shader Complexity");
+
+    vector<uint32_t> events = passEvents;
+
+    if(overlay == DebugOverlay::ShaderComplexityDraw)
+      events.clear();
+
+    events.push_back(eventID);
+
+    if(!events.empty())
+    {
+      if(overlay == DebugOverlay::ShaderComplexityPass)
+        m_WrappedDevice->ReplayLog(0, events[0], eReplay_WithoutDraw);
+
+      D3D11RenderState *state = m_WrappedContext->GetCurrentPipelineState();
+
+	  ID3D11Buffer *odbuf = MakeCBuffer(&overdrawRamp[0].x, sizeof(overdrawRamp));
+
+	  float shaderComplexity[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+      ID3D11Buffer *scbuf = MakeCBuffer(&shaderComplexity, sizeof(shaderComplexity));
+
+      if(overlay == DebugOverlay::ShaderComplexityPass)
+        m_WrappedDevice->ReplayLog(0, events[0], eReplay_WithoutDraw);
+
+      for(size_t i = 0; i < events.size(); i++)
+      {
+        D3D11RenderState oldstate = *m_WrappedContext->GetCurrentPipelineState();
+
+        D3D11_DEPTH_STENCIL_DESC dsdesc = {
+            /*DepthEnable =*/TRUE,
+            /*DepthWriteMask =*/D3D11_DEPTH_WRITE_MASK_ALL,
+            /*DepthFunc =*/D3D11_COMPARISON_LESS,
+            /*StencilEnable =*/FALSE,
+            /*StencilReadMask =*/D3D11_DEFAULT_STENCIL_READ_MASK,
+            /*StencilWriteMask =*/D3D11_DEFAULT_STENCIL_WRITE_MASK,
+            /*FrontFace =*/{D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP,
+                            D3D11_COMPARISON_ALWAYS},
+            /*BackFace =*/{D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP,
+                           D3D11_COMPARISON_ALWAYS},
+        };
+        ID3D11DepthStencilState *ds = NULL;
+
+        if(state->OM.DepthStencilState)
+          state->OM.DepthStencilState->GetDesc(&dsdesc);
+
+        dsdesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        dsdesc.StencilWriteMask = 0;
+
+        m_pDevice->CreateDepthStencilState(&dsdesc, &ds);
+
+        m_pImmediateContext->OMSetDepthStencilState(ds, oldstate.OM.StencRef);
+
+        SAFE_RELEASE(ds);
+
+        WrappedShader *vs = (WrappedShader*)oldstate.VS.Object;
+        WrappedShader *ps = (WrappedShader*)oldstate.PS.Object;
+        DXBC::DXBCFile *vsfile = vs ? vs->GetDXBC() : NULL;
+        DXBC::DXBCFile *psfile = ps ? ps->GetDXBC() : NULL;
+
+		// Grab disassembly for rendering.
+        if(vsfile)
+          vsfile->GetDisassembly();
+        if(psfile)
+          psfile->GetDisassembly();
+
+        const float maxComplexity = 512.0f;
+
+        // Just use the number of instructions for a rough estimate of complexity.
+        // Could be improved in a few ways:
+        // - Weight VS based on number of avg. num fragments per vertex.
+        // - Weight instruction type (i.e. ALU: 1, Fetch: 10, Flow: 20)
+        // - Weight based on number of parameters passed between stages.
+        float complexity = 0.0f;
+        if(vsfile)
+          complexity += vsfile->GetNumInstructions();
+
+        if(psfile)
+          complexity += psfile->GetNumInstructions();
+
+        shaderComplexity[0] = complexity;
+		shaderComplexity[1] = maxComplexity;
+
+        D3D11_MAPPED_SUBRESOURCE mapped;
+        m_pImmediateContext->Map(scbuf, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+
+		memcpy(mapped.pData, shaderComplexity, sizeof(shaderComplexity));
+
+        m_pImmediateContext->Unmap(scbuf, 0);
+
+		m_pImmediateContext->PSSetConstantBuffers(0, 1, &odbuf);
+        m_pImmediateContext->PSSetConstantBuffers(1, 1, &scbuf);
+
+        m_pImmediateContext->OMSetRenderTargets(1, &rtv, oldstate.OM.DepthView);
+
+        m_pImmediateContext->PSSetShader(m_DebugRender.ShaderComplexityPS, NULL, 0);
+
+        m_WrappedDevice->ReplayLog(events[i], events[i], eReplay_OnlyDraw);
+
+        oldstate.ApplyState(m_WrappedContext);
+
+        if(overlay == DebugOverlay::ShaderComplexityPass)
+        {
+          m_WrappedDevice->ReplayLog(events[i], events[i], eReplay_OnlyDraw);
+
+          if(i + 1 < events.size())
+            m_WrappedDevice->ReplayLog(events[i], events[i + 1], eReplay_WithoutDraw);
+        }
+      }
+    }
+  }
   else if(preDrawDepth)
   {
     D3D11_DEPTH_STENCIL_DESC cur = {0};

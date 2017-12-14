@@ -527,7 +527,7 @@ private:
     ID3D11VertexShader *GenericVS, *MeshVS, *FullscreenVS;
     ID3D11GeometryShader *MeshGS, *TriangleSizeGS;
     ID3D11PixelShader *TexDisplayPS, *OverlayPS, *WireframePS, *MeshPS, *CheckerboardPS,
-        *TriangleSizePS;
+        *TriangleSizePS, *ShaderComplexityPS;
     ID3D11PixelShader *OutlinePS;
     ID3D11PixelShader *CopyMSToArrayPS, *CopyArrayToMSPS;
     ID3D11PixelShader *FloatCopyMSToArrayPS, *FloatCopyArrayToMSPS;

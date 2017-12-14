@@ -213,7 +213,9 @@ struct Analytics
       bool QuadOverdrawDraw = false;
       bool TriangleSizePass = false;
       bool TriangleSizeDraw = false;
-    } TextureDebugOverlays;
+      bool ShaderComplexityPass = false;
+      bool ShaderComplexityDraw = false;      
+	  TextureDebugOverlays;
 
     struct
     {

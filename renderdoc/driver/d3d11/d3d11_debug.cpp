@@ -693,6 +693,9 @@ bool D3D11DebugManager::InitDebugRendering()
     m_DebugRender.TriangleSizePS =
         MakePShader(meshhlsl.c_str(), "RENDERDOC_TriangleSizePS", "ps_4_0");
 
+	m_DebugRender.ShaderComplexityPS =
+        MakePShader(meshhlsl.c_str(), "RENDERDOC_ShaderComplexityPS", "ps_4_0");
+
     m_DebugRender.MeshVSBytecode = new byte[bytecode.size()];
     m_DebugRender.MeshVSBytelen = (uint32_t)bytecode.size();
     memcpy(m_DebugRender.MeshVSBytecode, &bytecode[0], bytecode.size());

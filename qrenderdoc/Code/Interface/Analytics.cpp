@@ -244,6 +244,8 @@ void AnalyticsSerialise(QVariantMap &values, AnalyticsSerialiseType type)
       ANALYTIC_SERIALISE(UIFeatures.TextureDebugOverlays.QuadOverdrawDraw);
       ANALYTIC_SERIALISE(UIFeatures.TextureDebugOverlays.TriangleSizePass);
       ANALYTIC_SERIALISE(UIFeatures.TextureDebugOverlays.TriangleSizeDraw);
+      ANALYTIC_SERIALISE(UIFeatures.TextureDebugOverlays.ShaderComplexityPass);
+      ANALYTIC_SERIALISE(UIFeatures.TextureDebugOverlays.ShaderComplexityDraw);
     }
 
     // RemoteReplay
