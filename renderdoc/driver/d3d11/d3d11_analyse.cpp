@@ -4371,21 +4371,20 @@ ResourceId D3D11DebugManager::RenderOverlay(ResourceId texid, CompType typeHint,
         m_WrappedDevice->ReplayLog(0, eventID, eReplay_WithoutDraw);
     }
   }
-  else if(overlay == DebugOverlay::VSComplexityDraw || overlay == DebugOverlay::VSComplexityPass ||
-	  overlay == DebugOverlay::PSComplexityDraw || overlay == DebugOverlay::PSComplexityPass)
+  else if(overlay == DebugOverlay::ShaderComplexityDraw || overlay == DebugOverlay::ShaderComplexityPass)
   {
     SCOPED_TIMER("Shader Complexity");
 
     vector<uint32_t> events = passEvents;
 
-    if(overlay == DebugOverlay::VSComplexityDraw || overlay == DebugOverlay::PSComplexityDraw)
+    if(overlay == DebugOverlay::ShaderComplexityDraw)
       events.clear();
 
     events.push_back(eventID);
 
     if(!events.empty())
     {
-      if(overlay == DebugOverlay::VSComplexityPass || overlay == DebugOverlay::PSComplexityPass)
+      if(overlay == DebugOverlay::ShaderComplexityPass)
         m_WrappedDevice->ReplayLog(0, events[0], eReplay_WithoutDraw);
 
       D3D11RenderState *state = m_WrappedContext->GetCurrentPipelineState();
@@ -4395,45 +4394,7 @@ ResourceId D3D11DebugManager::RenderOverlay(ResourceId texid, CompType typeHint,
 	  float shaderComplexity[] = { 0.0f, 0.0f, 0.0f, 0.0f };
       ID3D11Buffer *scbuf = MakeCBuffer(&shaderComplexity, sizeof(shaderComplexity));
 
-	  // If true, will determine the maximum complexity and use that to determine the range within the ramp to use.
-	  bool normaliseComplexity = false;
-	  float maxComplexity = 256.0f;
-
-      if(overlay == DebugOverlay::VSComplexityDraw || overlay == DebugOverlay::PSComplexityDraw)
-        normaliseComplexity = false;
-
-	  if(normaliseComplexity)
-	  {
-        maxComplexity = 0.0f;
-
-        m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
-
-        for (size_t i = 0; i < events.size(); i++)
-		{
-          D3D11RenderState oldstate = *m_WrappedContext->GetCurrentPipelineState();
-
-          WrappedShader *vs = (WrappedShader*)oldstate.VS.Object;
-          WrappedShader *ps = (WrappedShader*)oldstate.PS.Object;
-          DXBC::DXBCFile *vsfile = vs ? vs->GetDXBC() : NULL;
-          DXBC::DXBCFile *psfile = ps ? ps->GetDXBC() : NULL;
-
-          // Grab disassembly for rendering.
-          if(vsfile)
-	          vsfile->GetDisassembly();
-          if(psfile)
-	          psfile->GetDisassembly();
-
-          if(overlay == DebugOverlay::VSComplexityPass || overlay == DebugOverlay::VSComplexityDraw)
-	          maxComplexity = std::max(maxComplexity, vsfile ? vsfile->GetNumInstructions() : 0.0f);
-          else
-	          maxComplexity = std::max(maxComplexity, psfile ? psfile->GetNumInstructions() : 0.0f);
-
-          // WithoutDraw seems to not rebind the next pipeline state.
-          m_WrappedDevice->ReplayLog(events[i], events[i], eReplay_Full);
-        }
-      }
-
-      if(overlay == DebugOverlay::VSComplexityPass || overlay == DebugOverlay::PSComplexityPass)
+      if(overlay == DebugOverlay::ShaderComplexityPass)
         m_WrappedDevice->ReplayLog(0, events[0], eReplay_WithoutDraw);
 
       for(size_t i = 0; i < events.size(); i++)
@@ -4477,17 +4438,21 @@ ResourceId D3D11DebugManager::RenderOverlay(ResourceId texid, CompType typeHint,
         if(psfile)
           psfile->GetDisassembly();
 
-        float complexity = 0.0f;
-        if(overlay == DebugOverlay::VSComplexityPass || overlay == DebugOverlay::VSComplexityDraw)
-		{
-          complexity = vsfile ? vsfile->GetNumInstructions() : 0.0f;
-		}
-        else
-		{
-          complexity = psfile ? psfile->GetNumInstructions() : 0.0f;
-		}
+        const float maxComplexity = 512.0f;
 
-		shaderComplexity[0] = complexity;
+        // Just use the number of instructions for a rough estimate of complexity.
+        // Could be improved in a few ways:
+        // - Weight VS based on number of avg. num fragments per vertex.
+        // - Weight instruction type (i.e. ALU: 1, Fetch: 10, Flow: 20)
+        // - Weight based on number of parameters passed between stages.
+        float complexity = 0.0f;
+        if(vsfile)
+          complexity += vsfile->GetNumInstructions();
+
+        if(psfile)
+          complexity += psfile->GetNumInstructions();
+
+        shaderComplexity[0] = complexity;
 		shaderComplexity[1] = maxComplexity;
 
         D3D11_MAPPED_SUBRESOURCE mapped;
@@ -4508,7 +4473,7 @@ ResourceId D3D11DebugManager::RenderOverlay(ResourceId texid, CompType typeHint,
 
         oldstate.ApplyState(m_WrappedContext);
 
-        if(overlay == DebugOverlay::VSComplexityPass || overlay == DebugOverlay::PSComplexityPass)
+        if(overlay == DebugOverlay::ShaderComplexityPass)
         {
           m_WrappedDevice->ReplayLog(events[i], events[i], eReplay_OnlyDraw);
 

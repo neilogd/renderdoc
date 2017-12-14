@@ -914,10 +914,8 @@ enum class DebugOverlay : uint32_t
   QuadOverdrawDraw,
   TriangleSizePass,
   TriangleSizeDraw,
-  VSComplexityPass,
-  VSComplexityDraw,
-  PSComplexityPass,
-  PSComplexityDraw,
+  ShaderComplexityPass,
+  ShaderComplexityDraw,
 };
 
 DECLARE_REFLECTION_ENUM(DebugOverlay);
